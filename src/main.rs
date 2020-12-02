@@ -6,7 +6,83 @@ use crossterm::{
     style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
 };
 
-enum HexagonEdge {
+
+ /* Hexagon */
+trait Drawable {
+    fn draw(&self);
+}
+
+struct Edge {
+    foreground_color: Color,
+    background_color: Color,
+    edge_type: EdgeType,
+    hexagon_x: u16,
+    hexagon_y: u16,
+}
+
+impl Drawable for Edge {
+    fn draw(&self) {
+        execute!(
+            stdout(),
+            SetBackgroundColor(self.background_color),
+            SetForegroundColor(self.foreground_color),
+        );
+        match self.edge_type {
+            EdgeType::Top => {
+                execute!(
+                    stdout(),
+                    crossterm::cursor::MoveTo(self.hexagon_x + 2, self.hexagon_y),
+                    Print("____"),
+                );
+            }
+            EdgeType::TopLeft => {
+                execute!(
+                    stdout(),
+                    crossterm::cursor::MoveTo(self.hexagon_x+1, self.hexagon_y+1),
+                    Print("/"),
+                    crossterm::cursor::MoveTo(self.hexagon_x, self.hexagon_y+2),
+                    Print("/"),
+                );
+            }
+            EdgeType::TopRight => {
+                execute!(
+                    stdout(),
+                    crossterm::cursor::MoveTo(self.hexagon_x+6, self.hexagon_y+1),
+                    Print("\\"),
+                    crossterm::cursor::MoveTo(self.hexagon_x+7, self.hexagon_y+2),
+                    Print("\\"),
+                );
+            }
+            EdgeType::BottomLeft => {
+                execute!(
+                    stdout(),
+                    crossterm::cursor::MoveTo(self.hexagon_x, self.hexagon_y+3),
+                    Print("\\"),
+                    crossterm::cursor::MoveTo(self.hexagon_x+1, self.hexagon_y+4),
+                    Print("\\"),
+                );
+            }
+            EdgeType::BottomRight => {
+                execute!(
+                    stdout(),
+                    crossterm::cursor::MoveTo(self.hexagon_x+7, self.hexagon_y+3),
+                    Print("/"),
+                    crossterm::cursor::MoveTo(self.hexagon_x+6, self.hexagon_y+4),
+                    Print("/"),
+                );
+            }
+            EdgeType::Bottom => {
+                execute!(
+                    stdout(),
+                    crossterm::cursor::MoveTo(self.hexagon_x+2, self.hexagon_y+4),
+                    Print("____"),
+                );
+            }
+        }
+    }
+}
+
+enum EdgeType {
     Top,
     TopLeft,
     TopRight,
@@ -15,10 +91,44 @@ enum HexagonEdge {
     Bottom
 }
 
+struct Hexagon {
+    edges: Vec<Edge>,
+    //pub content: Vec<char>, // TODO: implement hexagon content
+    pub x: u16,
+    pub y: u16,
+}
+
+impl Hexagon {
+    pub fn new(x: u16, y: u16 /*, edge_colors: Vec<(edge_type: EdgeType, foreground_color: Color, background_color: Color)>*/) -> Hexagon {
+        let edges = vec![
+            Edge{edge_type: EdgeType::Top, hexagon_x: x, hexagon_y: y, foreground_color: Color::Blue, background_color: Color::Black},
+            Edge{edge_type: EdgeType::TopLeft, hexagon_x: x, hexagon_y: y, foreground_color: Color::Blue, background_color: Color::Black},
+            Edge{edge_type: EdgeType::TopRight, hexagon_x: x, hexagon_y: y, foreground_color: Color::Blue, background_color: Color::Black},
+            Edge{edge_type: EdgeType::BottomLeft, hexagon_x: x, hexagon_y: y, foreground_color: Color::Blue, background_color: Color::Black},
+            Edge{edge_type: EdgeType::BottomRight, hexagon_x: x, hexagon_y: y, foreground_color: Color::Blue, background_color: Color::Black},
+            Edge{edge_type: EdgeType::Bottom, hexagon_x: x, hexagon_y: y, foreground_color: Color::Blue, background_color: Color::Black},
+        ];
+        Hexagon {edges: edges, x: x, y: y}
+    }
+}
+
+impl Drawable for Hexagon {
+    fn draw(&self) {
+        for edge in self.edges.iter() {
+            edge.draw();
+        }
+    }
+}
+
+struct Map {
+    pub width: u16,
+    pub height: u16,
+    pub hexagons: Vec<Hexagon>,
+}
+
 fn main() {
     execute!(
         stdout(),
-        SetForegroundColor(Color::Blue),
         Clear(ClearType::All),
     );
 
@@ -37,75 +147,20 @@ fn draw_grid(lenght: u16, height: u16) {
     let y_shift = 4;
     let mut cur_x;
     let mut cur_y;
+
+    let mut map = Map { width: lenght, height: height, hexagons: vec!() };
+
     for x in 0..lenght {
         for y in 0..height {
             cur_x = x * x_shift;
             cur_y = if x % 2 == 0 { y * y_shift } else { y * y_shift + y_semi_shift };
-            draw_hexagon_at(cur_x, cur_y);
+
+            let hexagon = Hexagon::new(cur_x, cur_y);
+            map.hexagons.push(hexagon);
         }
     }
-}
 
-fn draw_hexagon_at(x: u16, y: u16) {
-    draw_hexagon_edge(HexagonEdge::Top, x, y);
-    draw_hexagon_edge(HexagonEdge::TopLeft, x, y);
-    draw_hexagon_edge(HexagonEdge::TopRight, x, y);
-    draw_hexagon_edge(HexagonEdge::BottomLeft, x, y);
-    draw_hexagon_edge(HexagonEdge::BottomRight, x, y);
-    draw_hexagon_edge(HexagonEdge::Bottom, x, y);
-}
-
-fn draw_hexagon_edge(hexagon_edge: HexagonEdge, x: u16, y: u16) {
-    match hexagon_edge {
-        HexagonEdge::Top => {
-            execute!(
-                stdout(),
-                crossterm::cursor::MoveTo(x + 2, y),
-                Print("____"),
-            );
-        }
-        HexagonEdge::TopLeft => {
-            execute!(
-                stdout(),
-                crossterm::cursor::MoveTo(x+1, y+1),
-                Print("/"),
-                crossterm::cursor::MoveTo(x, y+2),
-                Print("/"),
-            );
-        }
-        HexagonEdge::TopRight => {
-            execute!(
-                stdout(),
-                crossterm::cursor::MoveTo(x+6, y+1),
-                Print("\\"),
-                crossterm::cursor::MoveTo(x+7, y+2),
-                Print("\\"),
-            );
-        }
-        HexagonEdge::BottomLeft => {
-            execute!(
-                stdout(),
-                crossterm::cursor::MoveTo(x, y+3),
-                Print("\\"),
-                crossterm::cursor::MoveTo(x+1, y+4),
-                Print("\\"),
-            );
-        }
-        HexagonEdge::BottomRight => {
-            execute!(
-                stdout(),
-                crossterm::cursor::MoveTo(x+7, y+3),
-                Print("/"),
-                crossterm::cursor::MoveTo(x+6, y+4),
-                Print("/"),
-            );
-        }
-        HexagonEdge::Bottom => {
-            execute!(
-                stdout(),
-                crossterm::cursor::MoveTo(x+2, y+4),
-                Print("____"),
-            );
-        }
+    for h in map.hexagons.iter() {
+        h.draw();
     }
 }
