@@ -6,22 +6,15 @@ use crossterm::{
     style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
 };
 
-
- /* Hexagon */
-trait Drawable {
-    fn draw(&self);
-}
-
+#[derive(Debug, Copy, Clone)]
 struct Edge {
     foreground_color: Color,
     background_color: Color,
     edge_type: EdgeType,
-    hexagon_x: u16,
-    hexagon_y: u16,
 }
 
-impl Drawable for Edge {
-    fn draw(&self) {
+impl Edge {
+    fn draw(&self, hexagon_x: u16, hexagon_y: u16) {
         execute!(
             stdout(),
             SetBackgroundColor(self.background_color),
@@ -31,57 +24,63 @@ impl Drawable for Edge {
             EdgeType::Top => {
                 execute!(
                     stdout(),
-                    crossterm::cursor::MoveTo(self.hexagon_x + 2, self.hexagon_y),
+                    crossterm::cursor::MoveTo(hexagon_x + 2, hexagon_y),
                     Print("____"),
                 );
             }
             EdgeType::TopLeft => {
                 execute!(
                     stdout(),
-                    crossterm::cursor::MoveTo(self.hexagon_x+1, self.hexagon_y+1),
+                    crossterm::cursor::MoveTo(hexagon_x+1, hexagon_y+1),
                     Print("/"),
-                    crossterm::cursor::MoveTo(self.hexagon_x, self.hexagon_y+2),
+                    crossterm::cursor::MoveTo(hexagon_x, hexagon_y+2),
                     Print("/"),
                 );
             }
             EdgeType::TopRight => {
                 execute!(
                     stdout(),
-                    crossterm::cursor::MoveTo(self.hexagon_x+6, self.hexagon_y+1),
+                    crossterm::cursor::MoveTo(hexagon_x+6, hexagon_y+1),
                     Print("\\"),
-                    crossterm::cursor::MoveTo(self.hexagon_x+7, self.hexagon_y+2),
+                    crossterm::cursor::MoveTo(hexagon_x+7, hexagon_y+2),
                     Print("\\"),
                 );
             }
             EdgeType::BottomLeft => {
                 execute!(
                     stdout(),
-                    crossterm::cursor::MoveTo(self.hexagon_x, self.hexagon_y+3),
+                    crossterm::cursor::MoveTo(hexagon_x, hexagon_y+3),
                     Print("\\"),
-                    crossterm::cursor::MoveTo(self.hexagon_x+1, self.hexagon_y+4),
+                    crossterm::cursor::MoveTo(hexagon_x+1, hexagon_y+4),
                     Print("\\"),
                 );
             }
             EdgeType::BottomRight => {
                 execute!(
                     stdout(),
-                    crossterm::cursor::MoveTo(self.hexagon_x+7, self.hexagon_y+3),
+                    crossterm::cursor::MoveTo(hexagon_x+7, hexagon_y+3),
                     Print("/"),
-                    crossterm::cursor::MoveTo(self.hexagon_x+6, self.hexagon_y+4),
+                    crossterm::cursor::MoveTo(hexagon_x+6, hexagon_y+4),
                     Print("/"),
                 );
             }
             EdgeType::Bottom => {
                 execute!(
                     stdout(),
-                    crossterm::cursor::MoveTo(self.hexagon_x+2, self.hexagon_y+4),
+                    crossterm::cursor::MoveTo(hexagon_x+2, hexagon_y+4),
                     Print("____"),
                 );
             }
         }
+
+        execute!(
+            stdout(),
+            ResetColor,
+        );
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 enum EdgeType {
     Top,
     TopLeft,
@@ -92,75 +91,154 @@ enum EdgeType {
 }
 
 struct Hexagon {
-    edges: Vec<Edge>,
+    pub edges: Vec<Edge>,
     //pub content: Vec<char>, // TODO: implement hexagon content
     pub x: u16,
     pub y: u16,
 }
 
 impl Hexagon {
-    pub fn new(x: u16, y: u16 /*, edge_colors: Vec<(edge_type: EdgeType, foreground_color: Color, background_color: Color)>*/) -> Hexagon {
-        let edges = vec![
-            Edge{edge_type: EdgeType::Top, hexagon_x: x, hexagon_y: y, foreground_color: Color::Blue, background_color: Color::Black},
-            Edge{edge_type: EdgeType::TopLeft, hexagon_x: x, hexagon_y: y, foreground_color: Color::Blue, background_color: Color::Black},
-            Edge{edge_type: EdgeType::TopRight, hexagon_x: x, hexagon_y: y, foreground_color: Color::Blue, background_color: Color::Black},
-            Edge{edge_type: EdgeType::BottomLeft, hexagon_x: x, hexagon_y: y, foreground_color: Color::Blue, background_color: Color::Black},
-            Edge{edge_type: EdgeType::BottomRight, hexagon_x: x, hexagon_y: y, foreground_color: Color::Blue, background_color: Color::Black},
-            Edge{edge_type: EdgeType::Bottom, hexagon_x: x, hexagon_y: y, foreground_color: Color::Blue, background_color: Color::Black},
-        ];
-        Hexagon {edges: edges, x: x, y: y}
-    }
-}
-
-impl Drawable for Hexagon {
     fn draw(&self) {
         for edge in self.edges.iter() {
-            edge.draw();
+            edge.draw(self.x, self.y);
         }
     }
 }
 
-struct Map {
-    pub width: u16,
-    pub height: u16,
-    pub hexagons: Vec<Hexagon>,
-}
 
+// Usage: Spaceship drawing example
 fn main() {
     execute!(
         stdout(),
         Clear(ClearType::All),
     );
 
-    draw_grid(10,4);
+    let ship_top_edge = Edge{edge_type: EdgeType::Top, foreground_color: Color::Red, background_color: Color::Black};
+    let ship_top_left_edge = Edge{edge_type: EdgeType::TopLeft, foreground_color: Color::Red, background_color: Color::Black};
+    let ship_top_right_edge = Edge{edge_type: EdgeType::TopRight, foreground_color: Color::Red, background_color: Color::Black};
+    let ship_bottom_left_edge = Edge{edge_type: EdgeType::BottomLeft, foreground_color: Color::Red, background_color: Color::Black};
+    let ship_bottom_right_edge = Edge{edge_type: EdgeType::BottomRight, foreground_color: Color::Red, background_color: Color::Black};
+    let ship_bottom_edge = Edge{edge_type: EdgeType::Bottom, foreground_color: Color::Red, background_color: Color::Black};
+
+    let internal_bottom_left_edge = Edge{edge_type: EdgeType::BottomLeft, foreground_color: Color::DarkGrey, background_color: Color::Black};
+    let internal_bottom_right_edge = Edge{edge_type: EdgeType::BottomRight, foreground_color: Color::DarkGrey, background_color: Color::Black};
+    let internal_bottom_edge = Edge{edge_type: EdgeType::Bottom, foreground_color: Color::DarkGrey, background_color: Color::Black};
+
+    let door_top_edge = Edge{edge_type: EdgeType::Top, foreground_color: Color::Yellow, background_color: Color::Black};
+    let door_top_left_edge = Edge{edge_type: EdgeType::TopLeft, foreground_color: Color::Yellow, background_color: Color::Black};
+    let door_top_right_edge = Edge{edge_type: EdgeType::TopRight, foreground_color: Color::Yellow, background_color: Color::Black};
+    let door_bottom_left_edge = Edge{edge_type: EdgeType::BottomLeft, foreground_color: Color::Yellow, background_color: Color::Black};
+    let door_bottom_right_edge = Edge{edge_type: EdgeType::BottomRight, foreground_color: Color::Yellow, background_color: Color::Black};
+
+    let hexagon = Hexagon {
+        edges: vec![door_top_edge, ship_top_left_edge, ship_top_right_edge, ship_bottom_left_edge, ship_bottom_right_edge, internal_bottom_edge],
+        x: 12,
+        y: 0
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![door_top_edge, ship_top_left_edge, ship_top_right_edge, ship_bottom_left_edge, ship_bottom_right_edge, internal_bottom_edge],
+        x: 24,
+        y: 0
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![ship_top_left_edge, ship_top_right_edge, ship_bottom_left_edge, internal_bottom_right_edge, internal_bottom_edge],
+        x: 12,
+        y: 4
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![ship_top_left_edge, ship_top_right_edge, internal_bottom_left_edge, ship_bottom_right_edge, internal_bottom_edge],
+        x: 24,
+        y: 4
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![ship_top_edge, internal_bottom_left_edge, internal_bottom_right_edge, internal_bottom_edge],
+        x: 18,
+        y: 6
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![ship_top_left_edge, internal_bottom_left_edge, internal_bottom_right_edge, internal_bottom_edge],
+        x: 12,
+        y: 8
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![ship_top_right_edge, internal_bottom_left_edge, internal_bottom_right_edge, internal_bottom_edge],
+        x: 24,
+        y: 8
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![ship_top_edge, door_top_left_edge, ship_bottom_left_edge, internal_bottom_right_edge, internal_bottom_edge],
+        x: 6,
+        y: 10
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![internal_bottom_left_edge, internal_bottom_right_edge, internal_bottom_edge],
+        x: 18,
+        y: 10
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![ship_top_edge, door_top_right_edge, ship_bottom_right_edge, internal_bottom_left_edge, internal_bottom_edge],
+        x: 30,
+        y: 10
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![internal_bottom_left_edge, internal_bottom_right_edge, ship_bottom_edge],
+        x: 12,
+        y: 12
+    };
+    hexagon.draw();
+
+
+    let hexagon = Hexagon {
+        edges: vec![internal_bottom_left_edge, internal_bottom_right_edge, ship_bottom_edge],
+        x: 24,
+        y: 12
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![ship_top_left_edge, door_bottom_left_edge, ship_bottom_right_edge, ship_bottom_edge],
+        x: 6,
+        y: 14
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![ship_bottom_left_edge, ship_bottom_right_edge, ship_bottom_edge],
+        x: 18,
+        y: 14
+    };
+    hexagon.draw();
+
+    let hexagon = Hexagon {
+        edges: vec![ship_top_right_edge, ship_bottom_left_edge, door_bottom_right_edge, ship_bottom_edge],
+        x: 30,
+        y: 14
+    };
+    hexagon.draw();
 
     execute!(
         stdout(),
         ResetColor,
         crossterm::cursor::MoveTo(0, 30),
     );
-}
-
-fn draw_grid(lenght: u16, height: u16) {
-    let y_semi_shift = 2;
-    let x_shift = 6;
-    let y_shift = 4;
-    let mut cur_x;
-    let mut cur_y;
-
-    let mut map = Map { width: lenght, height: height, hexagons: vec!() };
-
-    for x in 0..lenght {
-        for y in 0..height {
-            cur_x = x * x_shift;
-            cur_y = if x % 2 == 0 { y * y_shift } else { y * y_shift + y_semi_shift };
-
-            let hexagon = Hexagon::new(cur_x, cur_y);
-            map.hexagons.push(hexagon);
-        }
-    }
-
-    for h in map.hexagons.iter() {
-        h.draw();
-    }
 }
