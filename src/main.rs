@@ -168,6 +168,36 @@ fn create_ship_hexagon(x: u16, y: u16) -> Hexagon {
     }
 }
 
+fn create_ship_interior_hexagon(x: u16, y: u16) -> Hexagon {
+    let ship_top_edge = Edge{edge_type: EdgeType::Top, foreground_color: Color::Rgb{r:20,g:20,b:20}, background_color: Color::Black};
+    let ship_top_left_edge = Edge{edge_type: EdgeType::TopLeft, foreground_color: Color::Rgb{r:20,g:20,b:20}, background_color: Color::Black};
+    let ship_top_right_edge = Edge{edge_type: EdgeType::TopRight, foreground_color: Color::Rgb{r:20,g:20,b:20}, background_color: Color::Black};
+    let ship_bottom_left_edge = Edge{edge_type: EdgeType::BottomLeft, foreground_color: Color::Rgb{r:20,g:20,b:20}, background_color: Color::Black};
+    let ship_bottom_right_edge = Edge{edge_type: EdgeType::BottomRight, foreground_color: Color::Rgb{r:20,g:20,b:20}, background_color: Color::Black};
+    let ship_bottom_edge = Edge{edge_type: EdgeType::Bottom, foreground_color: Color::Rgb{r:20,g:20,b:20}, background_color: Color::Black};
+
+    Hexagon {
+        edges: vec![ship_top_edge, ship_top_left_edge, ship_top_right_edge, ship_bottom_left_edge, ship_bottom_right_edge, ship_bottom_edge],
+        x: x,
+        y: y
+    }
+}
+
+fn create_door_hexagon(x: u16, y: u16) -> Hexagon {
+    let ship_top_edge = Edge{edge_type: EdgeType::Top, foreground_color: Color::Yellow, background_color: Color::Black};
+    let ship_top_left_edge = Edge{edge_type: EdgeType::TopLeft, foreground_color: Color::Yellow, background_color: Color::Black};
+    let ship_top_right_edge = Edge{edge_type: EdgeType::TopRight, foreground_color: Color::Yellow, background_color: Color::Black};
+    let ship_bottom_left_edge = Edge{edge_type: EdgeType::BottomLeft, foreground_color: Color::Yellow, background_color: Color::Black};
+    let ship_bottom_right_edge = Edge{edge_type: EdgeType::BottomRight, foreground_color: Color::Yellow, background_color: Color::Black};
+    let ship_bottom_edge = Edge{edge_type: EdgeType::Bottom, foreground_color: Color::Yellow, background_color: Color::Black};
+
+    Hexagon {
+        edges: vec![ship_top_edge, ship_top_left_edge, ship_top_right_edge, ship_bottom_left_edge, ship_bottom_right_edge, ship_bottom_edge],
+        x: x,
+        y: y
+    }
+}
+
 // Usage: Spaceship drawing example
 fn main() {
     execute!(
@@ -183,16 +213,25 @@ fn main() {
 
     // TODO: Move to file
     let contents = "
-         00000
-        0000000
-        0000000
-  0 0   0000000   0 0
-  0 0  000000000  0 0
- 000000000000000000000
- 000000000000000000000
- 00000 000000000 00000
-        0000000
+         02220
+        0111110
+        0110110
+  0 0   2110112   0 0
+  0 0  021101120  0 0
+ 200000111101111000002
+ 211111101111101111112
+ 211111101111101111112
+ 000002211111112200000
+        0001000
        00 000 00";
+
+    for (i,s) in contents.lines().enumerate() {
+        for (j,c) in s.chars().enumerate() {
+            if c == '1' {
+                map.hexagons.push(create_ship_interior_hexagon(j as u16, i as u16));
+            }
+        }
+    }
 
     for (i,s) in contents.lines().enumerate() {
         for (j,c) in s.chars().enumerate() {
@@ -201,7 +240,16 @@ fn main() {
             }
         }
     }
-    map.draw(1,0);
+
+    for (i,s) in contents.lines().enumerate() {
+        for (j,c) in s.chars().enumerate() {
+            if c == '2' {
+                map.hexagons.push(create_door_hexagon(j as u16, i as u16));
+            }
+        }
+    }
+
+    map.draw(100,0);
 
     // let ship_top_edge = Edge{edge_type: EdgeType::Top, foreground_color: Color::Blue, background_color: Color::Black};
     // let ship_top_left_edge = Edge{edge_type: EdgeType::TopLeft, foreground_color: Color::Blue, background_color: Color::Black};
