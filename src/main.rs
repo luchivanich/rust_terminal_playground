@@ -7,6 +7,7 @@ use crossterm::{
 
 mod terminal_ui;
 
+use terminal_ui::HexagonPattern;
 use terminal_ui::Hexagon;
 use terminal_ui::Map;
 
@@ -14,7 +15,6 @@ fn create_hexagon(x: u16, y: u16, foreground_color: Color) -> Hexagon {
     Hexagon {
         foreground_color: foreground_color,
         background_color: Color::Black,
-        content: vec![],
         col: x,
         row: y,
     }
@@ -22,13 +22,15 @@ fn create_hexagon(x: u16, y: u16, foreground_color: Color) -> Hexagon {
 
 fn main() {
 
-    let hexagon_pattern = include_str!("resources/hexagon.txt");
+    let hexagon_pattern_string = include_str!("resources/big_hexagon.txt");
     let ship = include_str!("resources/map.txt");
 
     execute!(
         stdout(),
         Clear(ClearType::All),
     );
+
+    let hexagon_pattern = HexagonPattern::new(hexagon_pattern_string);
 
     let mut map = Map {
         width: 160,
@@ -38,30 +40,28 @@ fn main() {
         map: ship,
     };
 
-    for (i,s) in ship.lines().enumerate() {
-        for (j,c) in s.chars().enumerate() {
-            if c == '1' {
-                map.hexagons.push(create_hexagon(j as u16, i as u16, Color::Rgb{r:20, g:20, b:20}));
-            }
-        }
-    }
+    let mut hexagons: Vec<(Hexagon, i32)> = vec!();
 
     for (i,s) in ship.lines().enumerate() {
         for (j,c) in s.chars().enumerate() {
-            if c == '0' {
-                map.hexagons.push(create_hexagon(j as u16, i as u16, Color::Blue));
+            if c == ' ' {
+                continue;
             }
+
+            let hexagon = 
+                match c {
+                    '0' => { create_hexagon(j as u16, i as u16, Color::Rgb{r:20, g:20, b:20}) }
+                    '1' => { create_hexagon(j as u16, i as u16, Color::Blue) }
+                    '2' => { create_hexagon(j as u16, i as u16, Color::Yellow) }
+                    _ => { panic!("Map contains incorrect symbol") }
+                };
+            hexagons.push((hexagon, (c.to_string()).parse::<i32>().unwrap()));
         }
     }
 
-    for (i,s) in ship.lines().enumerate() {
-        for (j,c) in s.chars().enumerate() {
-            if c == '2' {
-                map.hexagons.push(create_hexagon(j as u16, i as u16, Color::Yellow));
-            }
-        }
-    }
+    hexagons.sort_by_key(|k| k.1);
 
+    map.hexagons = hexagons.iter().map(|k| k.0).collect();
     map.draw(0,0);
 
     execute!(
