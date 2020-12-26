@@ -1,4 +1,8 @@
-use std::cmp::{max,min};
+use crate::model::Map;
+use std::{
+    cmp::{max,min},
+    rc::Rc,
+};
 use tui::{
     buffer::Buffer,
     layout::Rect,
@@ -10,23 +14,23 @@ const MIN_SCALE: u16 = 1;
 
 pub struct MapState {
     scale: u16,
+    map: Rc<Map>,
 }
 
 impl MapState {
+    pub fn new(map: &Rc<Map>) -> Self {
+        Self {
+            scale: MIN_SCALE,
+            map: Rc::clone(map),
+        }
+    }
+
     pub fn inc_scale(&mut self) {
         self.scale = min(self.scale + 1, MAX_SCALE);
     }
 
     pub fn dec_scale(&mut self) {
         self.scale = max(self.scale - 1, MIN_SCALE);
-    }
-}
-
-impl Default for MapState {
-    fn default() -> Self {
-        Self {
-            scale: MIN_SCALE,
-        }
     }
 }
 
@@ -78,15 +82,15 @@ impl<'a> StatefulWidget for MapWidget<'a> {
                 render_char(2 * state.scale + i, 2 * state.scale, '_');
             }
         };
-        // TODO: for test only, replace with real map
-        render_hex(0, 0);
-        render_hex(1, 0);
-        render_hex(0, 2);
-        render_hex(0, 1);
 
-        render_hex(3, 0);
-        render_hex(3, 1);
-        render_hex(3, 2);
-        render_hex(3, 3);
+        let grid = &(*state.map).grid;
+
+        for (i, row) in grid.iter().enumerate() {
+            for (j, ch) in row.chars().enumerate() {
+                if ch != ' ' {
+                    render_hex(i as u16, j as u16);
+                }
+            }
+        }
     }
 }
