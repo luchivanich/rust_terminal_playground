@@ -1,3 +1,4 @@
+use crate::view::{draw, MapState};
 use crossterm::{
     event::{Event, KeyCode, read},
     execute,
@@ -28,11 +29,14 @@ impl<W: Write> App<W> {
     }
 
     pub fn run(&mut self) -> Result<(), Box<dyn Error>> {
+        let mut map_state = MapState::default();
         loop {
-            // TODO: draw
+            self.terminal.draw(|f| draw(f, &mut map_state))?;
             match read()? {
                 Event::Key(event) => match event.code {
                     KeyCode::Esc => break,
+                    KeyCode::Char('+') => map_state.inc_scale(),
+                    KeyCode::Char('-') => map_state.dec_scale(),
                     _ => {}
                 },
                 _ => {}
