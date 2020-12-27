@@ -42,6 +42,10 @@ impl<W: Write> App<W> {
             match read()? {
                 Event::Key(event) => match event.code {
                     KeyCode::Esc => break,
+                    KeyCode::Left => map_state.scroll_left(),
+                    KeyCode::Right => map_state.scroll_right(),
+                    KeyCode::Up => map_state.scroll_up(),
+                    KeyCode::Down => map_state.scroll_down(),
                     KeyCode::Char('+') => map_state.inc_scale(),
                     KeyCode::Char('-') => map_state.dec_scale(),
                     _ => {}

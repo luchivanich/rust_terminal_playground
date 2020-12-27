@@ -10,12 +10,16 @@ use tui::{
     widgets::{Block, Borders, StatefulWidget, Widget},
 };
 
-const MAX_SCALE: u16 = 5;
-const MIN_SCALE: u16 = 1;
+const MAX_SCALE: i32 = 5;
+const MIN_SCALE: i32 = 1;
+const SHIFT_X: i32 = 10;
+const SHIFT_Y: i32 = 3;
 
 pub struct MapState {
     styles: Vec<(char, Style)>,
-    scale: u16,
+    scale: i32,
+    shift_x: i32,
+    shift_y: i32,
     map: Rc<Map>,
 }
 
@@ -29,8 +33,30 @@ impl MapState {
         Self {
             styles,
             scale: MIN_SCALE,
+            shift_x: 0,
+            shift_y: 0,
             map: Rc::clone(map),
         }
+    }
+
+    pub fn scroll_left(&mut self) {
+        // TODO: check overflow
+        self.shift_x += SHIFT_X;
+    }
+
+    pub fn scroll_right(&mut self) {
+        // TODO: check overflow
+        self.shift_x -= SHIFT_X;
+    }
+
+    pub fn scroll_up(&mut self) {
+        // TODO: check overflow
+        self.shift_y += SHIFT_Y;
+    }
+
+    pub fn scroll_down(&mut self) {
+        // TODO: check overflow
+        self.shift_y -= SHIFT_Y;
     }
 
     pub fn inc_scale(&mut self) {
@@ -61,18 +87,24 @@ impl<'a> StatefulWidget for MapWidget<'a> {
         let inner = self.block.inner(area);
         self.block.render(area, buf);
 
-        let mut render_hex = |pos_i: u16, pos_j: u16, style: &Style| {
-            let start_x = 3 * pos_j * state.scale;
-            let start_y = 2 * pos_i * state.scale + (pos_j % 2) * state.scale;
+        let mut render_hex = |pos_i: i32, pos_j: i32, style: &Style| {
+            let start_x = state.shift_x
+                + 3 * pos_j * state.scale;
+            let start_y = state.shift_y
+                + 2 * pos_i * state.scale + (pos_j % 2) * state.scale;
 
-            let mut render_char = |x: u16, y: u16, ch: char, style: &Style| {
+            let mut render_char = |x: i32, y: i32, ch: char, style: &Style| {
                 let x = start_x + x;
                 let y = start_y + y;
+                if x < 0 || y < 0 {
+                    return;
+                }
+                let x = x as u16;
+                let y = y as u16;
                 if x < inner.width && y < inner.height {
                     let cell = buf.get_mut(x + inner.x, y + inner.y);
                     cell.set_style(*style);
                     cell.set_char(ch);
-                    //buf.get_mut(x + inner.x, y + inner.y).set_char(ch);
                 }
             };
 
@@ -105,7 +137,7 @@ impl<'a> StatefulWidget for MapWidget<'a> {
             for (i, row) in grid.iter().enumerate() {
                 for (j, ch) in row.chars().enumerate() {
                     if ch == *ch_type {
-                        render_hex(i as u16, j as u16, style);
+                        render_hex(i as i32, j as i32, style);
                     }
                 }
             }
