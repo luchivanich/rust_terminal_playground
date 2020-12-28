@@ -26,9 +26,11 @@ pub struct MapState {
 impl MapState {
     pub fn new(map: &Rc<Map>) -> Self {
         let styles = vec![
-            ('0', Style::default().fg(Color::Rgb(20, 20, 20))),
-            ('1', Style::default().fg(Color::Blue)),
-            ('2', Style::default().fg(Color::Yellow))
+            ('0', Style::default().fg(Color::Rgb(15, 15, 15,))),
+            ('1', Style::default().fg(Color::Rgb(45, 45, 45))),
+            ('2', Style::default().fg(Color::Rgb(35, 35, 35))),
+            ('3', Style::default().fg(Color::Blue)),
+            ('5', Style::default().fg(Color::Yellow)),
         ];
         Self {
             styles,
